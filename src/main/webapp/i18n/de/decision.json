@@ -1,0 +1,10 @@
+{
+  "adpaievfApp": {
+    "Decision": {
+      "null": "",
+      "Accepte": "Accepte",
+      "Refuse": "Refuse",
+      "EnAttente": "EnAttente"
+    }
+  }
+}

@@ -48,6 +48,31 @@ public class CacheConfiguration {
             createCache(cm, com.adateam.adpaievf.domain.User.class.getName());
             createCache(cm, com.adateam.adpaievf.domain.Authority.class.getName());
             createCache(cm, com.adateam.adpaievf.domain.User.class.getName() + ".authorities");
+            createCache(cm, com.adateam.adpaievf.domain.Location.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Location.class.getName() + ".employees");
+            createCache(cm, com.adateam.adpaievf.domain.Location.class.getName() + ".employeurs");
+            createCache(cm, com.adateam.adpaievf.domain.HeureSup.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Employee.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Employee.class.getName() + ".jobs");
+            createCache(cm, com.adateam.adpaievf.domain.Employee.class.getName() + ".locations");
+            createCache(cm, com.adateam.adpaievf.domain.Employeur.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Employeur.class.getName() + ".conventionCollectives");
+            createCache(cm, com.adateam.adpaievf.domain.Employeur.class.getName() + ".locations");
+            createCache(cm, com.adateam.adpaievf.domain.Job.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Job.class.getName() + ".employees");
+            createCache(cm, com.adateam.adpaievf.domain.TauxDImposition.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.MentionsObligatoires.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.MentionsObligatoires.class.getName() + ".ficheDePaies");
+            createCache(cm, com.adateam.adpaievf.domain.Conge.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Bonus.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Contrat.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.FicheDePaie.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.FicheDePaie.class.getName() + ".cotisations");
+            createCache(cm, com.adateam.adpaievf.domain.FicheDePaie.class.getName() + ".mentionsObligatoires");
+            createCache(cm, com.adateam.adpaievf.domain.ConventionCollective.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.ConventionCollective.class.getName() + ".employeurs");
+            createCache(cm, com.adateam.adpaievf.domain.Cotisation.class.getName());
+            createCache(cm, com.adateam.adpaievf.domain.Cotisation.class.getName() + ".ficheDePaies");
             // jhipster-needle-ehcache-add-entry
         };
     }
