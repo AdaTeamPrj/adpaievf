@@ -14,6 +14,7 @@ import com.adateam.adpaievf.repository.FicheDePaieRepository;
 import com.adateam.adpaievf.repository.TauxDImpositionRepository;
 import com.adateam.adpaievf.service.FicheDePaieService;
 import com.adateam.adpaievf.service.FicheDePaieService;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -168,8 +169,22 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
                 listeConge.get(i).getHoldateStart().isBefore(ficheDePaie.getEndDate()) &&
                 listeConge.get(i).getHoldateEnd().isAfter(ficheDePaie.getStartDate());
             if (
-                listeConge.get(i).getContrat().getEmployee() == employee && listeConge.get(i).getDecision() == Decision.Accepte && testdate
+                listeConge.get(i).getContrat().getEmployee().getId() == employee.getId() &&
+                listeConge.get(i).getDecision() == Decision.Accepte &&
+                testdate
             ) {
+                LocalDate dateDebut = listeConge.get(i).getHoldateStart();
+                LocalDate dateDeFin = ficheDePaie.getEndDate();
+                if (listeConge.get(i).getHoldateStart().isBefore(ficheDePaie.getStartDate()));
+
+                {
+                    dateDebut = ficheDePaie.getStartDate();
+                }
+                if (listeConge.get(i).getHoldateEnd().isBefore(ficheDePaie.getEndDate()));
+
+                {
+                    dateDeFin = listeConge.get(i).getHoldateEnd();
+                }
                 //nb_days+=listeConge.get(i).getHoldateEnd(). listeConge.get(i).getHoldateStart();
                 nb_days += ChronoUnit.DAYS.between(listeConge.get(i).getHoldateEnd(), listeConge.get(i).getHoldateStart());
             }
