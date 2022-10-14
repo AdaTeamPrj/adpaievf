@@ -2,6 +2,7 @@ package com.adateam.adpaievf.service.impl;
 
 import com.adateam.adpaievf.domain.Conge;
 import com.adateam.adpaievf.domain.Contrat;
+import com.adateam.adpaievf.domain.Cotisation;
 import com.adateam.adpaievf.domain.Employee;
 import com.adateam.adpaievf.domain.FicheDePaie;
 import com.adateam.adpaievf.domain.FicheDePaie;
@@ -9,6 +10,7 @@ import com.adateam.adpaievf.domain.TauxDImposition;
 import com.adateam.adpaievf.domain.enumeration.Decision;
 import com.adateam.adpaievf.repository.CongeRepository;
 import com.adateam.adpaievf.repository.ContratRepository;
+import com.adateam.adpaievf.repository.CotisationRepository;
 import com.adateam.adpaievf.repository.FicheDePaieRepository;
 import com.adateam.adpaievf.repository.FicheDePaieRepository;
 import com.adateam.adpaievf.repository.TauxDImpositionRepository;
@@ -37,17 +39,20 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
     private final TauxDImpositionRepository tauxDImpositionRepository;
     private final ContratRepository contratRepository;
     private final CongeRepository congeRepository;
+    private final CotisationRepository cotisationRepository;
 
     public FicheDePaieServiceImpl(
         FicheDePaieRepository ficheDePaieRepository,
         TauxDImpositionRepository tauxDImpositionRepository,
         ContratRepository contratRepository,
-        CongeRepository congeRepository
+        CongeRepository congeRepository,
+        CotisationRepository cotisationRepository
     ) {
         this.ficheDePaieRepository = ficheDePaieRepository;
         this.tauxDImpositionRepository = tauxDImpositionRepository;
         this.contratRepository = contratRepository;
         this.congeRepository = congeRepository;
+        this.cotisationRepository = cotisationRepository;
     }
 
     @Override
@@ -158,6 +163,18 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
         return res;
     }
 
+    public float getMontantNetAvantImpots(Float salaireBrut) {
+        //chercher les cotisations dans la table cotisations
+        List<Cotisation> ListeCotisation = cotisationRepository.findAll();
+        int i = 0;
+        float salaireNetAvantImpot = salaireBrut;
+        while (i < ListeCotisation.size()) {
+            salaireNetAvantImpot = salaireNetAvantImpot - ListeCotisation.get(i).getTaux() * salaireBrut / 100;
+            i++;
+        }
+        return salaireNetAvantImpot;
+    }
+
     public float getnbDaysConge(FicheDePaie ficheDePaie, Employee employee) {
         //chercher le salaire de base dans la table contrat
         List<Conge> listeConge = congeRepository.findAll();
@@ -184,6 +201,7 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
         //To do transform Salarie de base en salaire brut, set salaire brut
         //To do calcul cotisation
         //To do seek the correct tauxImmposition
+        salaire_net = getMontantNetAvantImpots(salaire_net);
         TauxDImposition imposition = getTauxImposition(salaire_net);
         salaire_net = salaire_net - imposition.calculs_imposition(imposition, salaire_net);
 
