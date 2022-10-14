@@ -1,8 +1,20 @@
 package com.adateam.adpaievf.service.impl;
 
+import com.adateam.adpaievf.domain.Conge;
+import com.adateam.adpaievf.domain.Contrat;
+import com.adateam.adpaievf.domain.Employee;
 import com.adateam.adpaievf.domain.FicheDePaie;
+import com.adateam.adpaievf.domain.FicheDePaie;
+import com.adateam.adpaievf.domain.TauxDImposition;
+import com.adateam.adpaievf.domain.enumeration.Decision;
+import com.adateam.adpaievf.repository.CongeRepository;
+import com.adateam.adpaievf.repository.ContratRepository;
 import com.adateam.adpaievf.repository.FicheDePaieRepository;
+import com.adateam.adpaievf.repository.FicheDePaieRepository;
+import com.adateam.adpaievf.repository.TauxDImpositionRepository;
 import com.adateam.adpaievf.service.FicheDePaieService;
+import com.adateam.adpaievf.service.FicheDePaieService;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -22,14 +34,29 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
     private final Logger log = LoggerFactory.getLogger(FicheDePaieServiceImpl.class);
 
     private final FicheDePaieRepository ficheDePaieRepository;
+    private final TauxDImpositionRepository tauxDImpositionRepository;
+    private final ContratRepository contratRepository;
+    private final CongeRepository congeRepository;
 
-    public FicheDePaieServiceImpl(FicheDePaieRepository ficheDePaieRepository) {
+    public FicheDePaieServiceImpl(
+        FicheDePaieRepository ficheDePaieRepository,
+        TauxDImpositionRepository tauxDImpositionRepository,
+        ContratRepository contratRepository,
+        CongeRepository congeRepository
+    ) {
         this.ficheDePaieRepository = ficheDePaieRepository;
+        this.tauxDImpositionRepository = tauxDImpositionRepository;
+        this.contratRepository = contratRepository;
+        this.congeRepository = congeRepository;
     }
 
     @Override
     public FicheDePaie save(FicheDePaie ficheDePaie) {
         log.debug("Request to save FicheDePaie : {}", ficheDePaie);
+        ficheDePaie.setSalaireNet(calculSalaireNet(ficheDePaie));
+        Employee employee = ficheDePaie.getContrat().getEmployee();
+        //float salaire_net = getSalaireBase(employee);
+        ficheDePaie.setSalaireBrut(getSalaireBase(employee));
         return ficheDePaieRepository.save(ficheDePaie);
     }
 
@@ -98,5 +125,69 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
     public void delete(Long id) {
         log.debug("Request to delete FicheDePaie : {}", id);
         ficheDePaieRepository.deleteById(id);
+    }
+
+    public TauxDImposition getTauxImposition(Float salaireNet) {
+        List<TauxDImposition> listeTaux = tauxDImpositionRepository.findAll();
+        int i = 0;
+        //to do check date
+        //plante si le min salary sont null
+        while (i < listeTaux.size()) {
+            if (
+                listeTaux.get(i).getMinSalary() <= salaireNet &&
+                (listeTaux.get(i).getMaxSalary() == null || listeTaux.get(i).getMaxSalary() > salaireNet)
+            ) {
+                return (listeTaux.get(i));
+            }
+            i++;
+        }
+        return null;
+    }
+
+    public float getSalaireBase(Employee employee) {
+        Float res = -1f;
+        //chercher le salaire de base dans la table contrat
+        List<Contrat> ListeContrat = contratRepository.findAll();
+        int i = 0;
+        while (i < ListeContrat.size()) {
+            if (ListeContrat.get(i).getEmployee().getId() == employee.getId()) {
+                return (ListeContrat.get(i).getSalaireBase());
+            }
+            i++;
+        }
+        return res;
+    }
+
+    public float getnbDaysConge(FicheDePaie ficheDePaie, Employee employee) {
+        //chercher le salaire de base dans la table contrat
+        List<Conge> listeConge = congeRepository.findAll();
+        int i = 0;
+        Float nb_days = 0f;
+        while (i < listeConge.size()) {
+            Boolean testdate =
+                listeConge.get(i).getHoldateStart().isBefore(ficheDePaie.getEndDate()) &&
+                listeConge.get(i).getHoldateEnd().isAfter(ficheDePaie.getStartDate());
+            if (
+                listeConge.get(i).getContrat().getEmployee() == employee && listeConge.get(i).getDecision() == Decision.Accepte && testdate
+            ) {
+                //nb_days+=listeConge.get(i).getHoldateEnd(). listeConge.get(i).getHoldateStart();
+                nb_days += ChronoUnit.DAYS.between(listeConge.get(i).getHoldateEnd(), listeConge.get(i).getHoldateStart());
+            }
+            i++;
+        }
+        return nb_days;
+    }
+
+    public Float calculSalaireNet(FicheDePaie ficheDePaie) {
+        Employee employee = ficheDePaie.getContrat().getEmployee();
+        float salaire_net = getSalaireBase(employee);
+        //To do transform Salarie de base en salaire brut, set salaire brut
+        //To do calcul cotisation
+        //To do seek the correct tauxImmposition
+        TauxDImposition imposition = getTauxImposition(salaire_net);
+        salaire_net = salaire_net - imposition.calculs_imposition(imposition, salaire_net);
+
+        System.out.println("salaire_net=" + salaire_net);
+        return (salaire_net);
     }
 }
