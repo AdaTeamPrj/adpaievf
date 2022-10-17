@@ -6,6 +6,7 @@ import com.adateam.adpaievf.domain.Cotisation;
 import com.adateam.adpaievf.domain.Employee;
 import com.adateam.adpaievf.domain.FicheDePaie;
 import com.adateam.adpaievf.domain.FicheDePaie;
+import com.adateam.adpaievf.domain.HeureSup;
 import com.adateam.adpaievf.domain.TauxDImposition;
 import com.adateam.adpaievf.domain.enumeration.Decision;
 import com.adateam.adpaievf.repository.CongeRepository;
@@ -13,6 +14,7 @@ import com.adateam.adpaievf.repository.ContratRepository;
 import com.adateam.adpaievf.repository.CotisationRepository;
 import com.adateam.adpaievf.repository.FicheDePaieRepository;
 import com.adateam.adpaievf.repository.FicheDePaieRepository;
+import com.adateam.adpaievf.repository.HeureSupRepository;
 import com.adateam.adpaievf.repository.TauxDImpositionRepository;
 import com.adateam.adpaievf.service.FicheDePaieService;
 import com.adateam.adpaievf.service.FicheDePaieService;
@@ -41,19 +43,22 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
     private final ContratRepository contratRepository;
     private final CongeRepository congeRepository;
     private final CotisationRepository cotisationRepository;
+    private final HeureSupRepository heureSupRepository;
 
     public FicheDePaieServiceImpl(
         FicheDePaieRepository ficheDePaieRepository,
         TauxDImpositionRepository tauxDImpositionRepository,
         ContratRepository contratRepository,
         CongeRepository congeRepository,
-        CotisationRepository cotisationRepository
+        CotisationRepository cotisationRepository,
+        HeureSupRepository heureSupRepository
     ) {
         this.ficheDePaieRepository = ficheDePaieRepository;
         this.tauxDImpositionRepository = tauxDImpositionRepository;
         this.contratRepository = contratRepository;
         this.congeRepository = congeRepository;
         this.cotisationRepository = cotisationRepository;
+        this.heureSupRepository = heureSupRepository;
     }
 
     @Override
@@ -62,7 +67,7 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
         ficheDePaie.setSalaireNet(calculSalaireNet(ficheDePaie));
         Employee employee = ficheDePaie.getContrat().getEmployee();
         //float salaire_net = getSalaireBase(employee);
-        ficheDePaie.setSalaireBrut(getSalaireBase(employee));
+        ficheDePaie.setSalaireBrut(getSalaireBase(employee) + getHeureSup(ficheDePaie));
         return ficheDePaieRepository.save(ficheDePaie);
     }
 
@@ -176,6 +181,41 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
         return salaireNetAvantImpot;
     }
 
+    public float getHeureSup(FicheDePaie ficheDePaie) {
+        //les HS sont calculées mensuellement
+        List<HeureSup> listeHeureSup = heureSupRepository.findAll();
+        int i = 0;
+        float montantHeureSup = 0f;
+        Employee employee = ficheDePaie.getContrat().getEmployee();
+        float nbHeure = 0f;
+        while (i < listeHeureSup.size()) {
+            Boolean testdate =
+                (
+                    listeHeureSup.get(i).getDate().isBefore(ficheDePaie.getEndDate()) ||
+                    listeHeureSup.get(i).getDate() == ficheDePaie.getEndDate()
+                ) &&
+                (
+                    listeHeureSup.get(i).getDate().isAfter(ficheDePaie.getStartDate()) ||
+                    listeHeureSup.get(i).getDate() == ficheDePaie.getStartDate()
+                );
+
+            if (listeHeureSup.get(i).getEmployee().getId() == employee.getId() && testdate) {
+                nbHeure = nbHeure + listeHeureSup.get(i).getNbHeure();
+            }
+            i++;
+        }
+
+        float salaireBase = getSalaireBase(employee);
+        if (nbHeure <= 30) {
+            montantHeureSup = nbHeure * ((salaireBase / 151.67f) * 1.25f);
+            return (montantHeureSup);
+        } else {
+            montantHeureSup = 30 * ((salaireBase / 151.67f) * 1.25f);
+            montantHeureSup += (nbHeure - 30) * ((salaireBase / 151.67f) * 1.50f);
+            return (montantHeureSup);
+        }
+    }
+
     public float getnbDaysConge(FicheDePaie ficheDePaie, Employee employee) {
         //chercher le salaire de base dans la table contrat
         List<Conge> listeConge = congeRepository.findAll();
@@ -212,7 +252,7 @@ public class FicheDePaieServiceImpl implements FicheDePaieService {
 
     public Float calculSalaireNet(FicheDePaie ficheDePaie) {
         Employee employee = ficheDePaie.getContrat().getEmployee();
-        float salaire_net = getSalaireBase(employee);
+        float salaire_net = getSalaireBase(employee) + getHeureSup(ficheDePaie);
         //To do transform Salarie de base en salaire brut, set salaire brut
         //To do calcul cotisation
         //To do seek the correct tauxImmposition
